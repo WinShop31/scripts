@@ -1,26 +1,60 @@
-# Путь к папке на Рабочеме столе
+# Путь к папке на Рабочем столе
 $DesktopPath = [System.Environment]::GetFolderPath('Desktop')
 $ModsFolder = Join-Path -Path $DesktopPath -ChildPath "Mods_Paid_Anomalies"
 
+# Создаем папку, если ее нет
 if (-not (Test-Path -Path $ModsFolder)) {
     New-Item -ItemType Directory -Path $ModsFolder | Out-Null
+    Write-Host "Папка создана: $ModsFolder" -ForegroundColor Green
+} else {
+    Write-Host "Папка уже существует: $ModsFolder" -ForegroundColor Yellow
 }
 
-# Список недостающих библиотек (Fabric 1.20.1)
-$MissingLibs = @(
+# Полный список модов и библиотек под Fabric 1.20.1
+$ModSlugs = @(
+    # Обязательные библиотеки (Core & Dependencies)
+    "fabric-api",
+    "architectury-api",
+    "cloth-config",
     "resourcefullib",
     "malilib",
-    "moonlight"
+    "moonlight",
+    
+    # Контент, декор и картинки
+    "immersive-paintings",
+    "supplementaries",
+    "handcrafted",
+    "macaws-doors",
+    "macaws-windows",
+    
+    # Инструменты для постройки
+    "axiom",
+    "worldedit",
+    "litematica",
+    
+    # Графика и оптимизация FPS
+    "sodium",
+    "iris",
+    "entityculling",
+    "immediatelyfast",
+    "badoptimizations",
+    
+    # Оптимизация памяти, ЦП и мира
+    "lithium",
+    "krypton",
+    "modernfix",
+    "memoryleakfix",
+    "threadtweak"
 )
 
-Write-Host "`nДокачиваем отсутствующие библиотеки (Fabric 1.20.1)...`n" -ForegroundColor Cyan
+Write-Host "`nСкачиваем полный набор модов и библиотек (Fabric 1.20.1)...`n" -ForegroundColor Cyan
 
-foreach ($slug in $MissingLibs) {
+foreach ($slug in $ModSlugs) {
     try {
         $apiUrl = "https://api.modrinth.com/v2/project/$slug/version"
         $response = Invoke-RestMethod -Uri $apiUrl -Method Get -UserAgent "MinecraftModDownloader/1.0"
         
-        # Ищем версию под Fabric и 1.20.1
+        # Фильтруем версии строго под Fabric и 1.20.1
         $matchedVersion = $response | Where-Object { 
             ($_.loaders -contains "fabric") -and ($_.game_versions -contains "1.20.1") 
         } | Select-Object -First 1
@@ -37,11 +71,11 @@ foreach ($slug in $MissingLibs) {
             Invoke-WebRequest -Uri $downloadUrl -OutFile $outputPath
             Write-Host " [ГОТОВО]" -ForegroundColor Green
         } else {
-            Write-Host "Не найден файл для $slug" -ForegroundColor Red
+            Write-Host "Не найден файл под Fabric 1.20.1 для $slug" -ForegroundColor Red
         }
     } catch {
         Write-Host "Ошибка при скачивании $slug : $_" -ForegroundColor Red
     }
 }
 
-Write-Host "`n Все библиотеки успешно скачаны!" -ForegroundColor Green
+Write-Host "`n Все моды и библиотеки успешно скачаны в папку Mods_Paid_Anomalies!" -ForegroundColor Green
