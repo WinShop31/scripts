@@ -1,0 +1,60 @@
+# Путь к папке на Рабочем столе
+$DesktopPath = [System.Environment]::GetFolderPath('Desktop')
+$ModsFolder = Join-Path -Path $DesktopPath -ChildPath "Mods_Paid_Anomalies"
+
+# Создаем папку, если ее нет
+if (-not (Test-Path -Path $ModsFolder)) {
+    New-Item -ItemType Directory -Path $ModsFolder | Out-Null
+    Write-Host "Папка создана: $ModsFolder" -ForegroundColor Green
+} else {
+    Write-Host "Папка уже существует: $ModsFolder" -ForegroundColor Yellow
+}
+
+# Список проектов на Modrinth (Fabric 1.20.1)
+$ModSlugs = @(
+    "fabric-api",
+    "architectury-api",
+    "cloth-config",
+    "immersive-paintings",
+    "supplementaries",
+    "handcrafted",
+    "macaws-doors",
+    "macaws-windows",
+    "axiom",
+    "worldedit",
+    "litematica",
+    "sodium",
+    "iris",
+    "lithium",
+    "entityculling"
+)
+
+Write-Host "`nНачинаем скачивание модов (Fabric 1.20.1)...`n" -ForegroundColor Cyan
+
+foreach ($slug in $ModSlugs) {
+    try {
+        # Запрос к API Modrinth для поиска версии под Fabric 1.20.1
+        $apiUrl = "https://api.modrinth.com/v2/project/$slug/version?loaders=[`"fabric`"]&game_versions=[`"1.20.1`"]"
+        $response = Invoke-RestMethod -Uri $apiUrl -Method Get -UserAgent "MinecraftModDownloader/1.0"
+        
+        if ($response.Count -gt 0) {
+            # Берем самый свежий файл
+            $file = $response[0].files | Where-Object { $_.primary -eq $true } | Select-Object -First 1
+            if (-not $file) { $file = $response[0].files[0] }
+            
+            $downloadUrl = $file.url
+            $fileName = $file.filename
+            $outputPath = Join-Path -Path $ModsFolder -ChildPath $fileName
+
+            Write-Host "Скачиваем: $fileName..." -NoNewline
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $outputPath
+            Write-Host " [ГОТОВО]" -ForegroundColor Green
+        } else {
+            Write-Host "Не найден файл для $slug (Fabric 1.20.1)" -ForegroundColor Red
+        }
+    } catch {
+        Write-Host "Ошибка при скачивании $slug : $_" -ForegroundColor Red
+    }
+}
+
+Write-Host "`n Все моды успешно скачаны в папку на Рабочем столе!" -ForegroundColor Green
