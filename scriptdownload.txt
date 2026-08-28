@@ -10,35 +10,50 @@ if (-not (Test-Path -Path $ModsFolder)) {
     Write-Host "Папка уже существует: $ModsFolder" -ForegroundColor Yellow
 }
 
-# Список проектов на Modrinth (Fabric 1.20.1)
+# Расширенный список проектов с мощной оптимизацией (Fabric 1.20.1)
 $ModSlugs = @(
+    # Базовые библиотеки
     "fabric-api",
     "architectury-api",
     "cloth-config",
+    
+    # Контент и декор
     "immersive-paintings",
     "supplementaries",
     "handcrafted",
     "macaws-doors",
     "macaws-windows",
+    
+    # Инструменты для постройки
     "axiom",
     "worldedit",
     "litematica",
+    
+    # Оптимизация графика и FPS
     "sodium",
     "iris",
+    "entityculling",
+    "immediatelyfast",
+    
+    # Оптимизация памяти, процессора и загрузки
     "lithium",
-    "entityculling"
+    "ferritecore",
+    "krypton",
+    "modernfix",
+    "memoryleakfix",
+    "threadtweak"
 )
 
-Write-Host "`nНачинаем скачивание модов (Fabric 1.20.1)...`n" -ForegroundColor Cyan
+Write-Host "`nСкачиваем полный набор модов + оптимизацию (Fabric 1.20.1)...`n" -ForegroundColor Cyan
 
 foreach ($slug in $ModSlugs) {
     try {
-        # Запрос к API Modrinth для поиска версии под Fabric 1.20.1
+        # Запрос к API Modrinth под Fabric 1.20.1
         $apiUrl = "https://api.modrinth.com/v2/project/$slug/version?loaders=[`"fabric`"]&game_versions=[`"1.20.1`"]"
         $response = Invoke-RestMethod -Uri $apiUrl -Method Get -UserAgent "MinecraftModDownloader/1.0"
         
         if ($response.Count -gt 0) {
-            # Берем самый свежий файл
+            # Выбираем основной файл
             $file = $response[0].files | Where-Object { $_.primary -eq $true } | Select-Object -First 1
             if (-not $file) { $file = $response[0].files[0] }
             
@@ -57,4 +72,4 @@ foreach ($slug in $ModSlugs) {
     }
 }
 
-Write-Host "`n Все моды успешно скачаны в папку на Рабочем столе!" -ForegroundColor Green
+Write-Host "`nВсе моды успешно закинуты в папку Mods_Paid_Anomalies на Рабочем столе!" -ForegroundColor Green
