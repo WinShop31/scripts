@@ -1,81 +1,49 @@
-# Путь к папке на Рабочем столе
-$DesktopPath = [System.Environment]::GetFolderPath('Desktop')
-$ModsFolder = Join-Path -Path $DesktopPath -ChildPath "Mods_Paid_Anomalies"
+$desktopFolder = [System.IO.Path]::Combine([System.Environment]::GetFolderPath('Desktop'), "Court_Modpack_1.16.5")
 
-# Создаем папку, если ее нет
-if (-not (Test-Path -Path $ModsFolder)) {
-    New-Item -ItemType Directory -Path $ModsFolder | Out-Null
-    Write-Host "Папка создана: $ModsFolder" -ForegroundColor Green
-} else {
-    Write-Host "Папка уже существует: $ModsFolder" -ForegroundColor Yellow
+if (-not (Test-Path -Path $desktopFolder)) {
+    New-Item -ItemType Directory -Path $desktopFolder -Force | Out-Null
+    Write-Host "📁 Создана папка на рабочем столе: $desktopFolder" -ForegroundColor Yellow
 }
 
-# Полный список модов и библиотек под Fabric 1.20.1
-$ModSlugs = @(
-    # Обязательные библиотеки (Core & Dependencies)
-    "fabric-api",
-    "architectury-api",
-    "cloth-config",
-    "resourcefullib",
-    "malilib",
-    "moonlight",
-    
-    # Контент, декор и картинки
-    "immersive-paintings",
-    "supplementaries",
-    "handcrafted",
-    "macaws-doors",
-    "macaws-windows",
-    
-    # Инструменты для постройки
-    "axiom",
-    "worldedit",
-    "litematica",
-    
-    # Графика и оптимизация FPS
-    "sodium",
-    "iris",
-    "entityculling",
-    "immediatelyfast",
-    "badoptimizations",
-    
-    # Оптимизация памяти, ЦП и мира
-    "lithium",
-    "krypton",
-    "modernfix",
-    "memoryleakfix",
-    "threadtweak"
-)
+$mods = @{
+    # 🛠️ Сетка и строительство
+    "WorldEdit"            = "https://cdn.modrinth.com/data/15vYM3xl/versions/v7.2.5/worldedit-mod-7.2.5.jar"
 
-Write-Host "`nСкачиваем полный набор модов и библиотек (Fabric 1.20.1)...`n" -ForegroundColor Cyan
+    # 🚀 Оптимизация
+    "Sodium"               = "https://cdn.modrinth.com/data/AANobbA5/versions/mc1.16.5-0.2.0%2Bbuild.4/sodium-fabric-mc1.16.5-0.2.0%2Bbuild.4.jar"
+    "Lithium"              = "https://cdn.modrinth.com/data/gvQqBU17/versions/mc1.16.5-0.6.6/lithium-fabric-mc1.16.5-0.6.6.jar"
+    "FerriteCore"          = "https://cdn.modrinth.com/data/u628MvyW/versions/2.0.7-fabric/ferritecore-2.0.7-fabric.jar"
+    "LazyDFU"              = "https://cdn.modrinth.com/data/7rm9I131/versions/0.1.2/lazydfu-0.1.2.jar"
 
-foreach ($slug in $ModSlugs) {
+    # 👁️ Визуал и Графика
+    "Iris (Shaders)"       = "https://cdn.modrinth.com/data/YLAmb3R7/versions/1.2.6-1.16.5/iris-mc1.16.5-1.2.6.jar"
+    "LambDynamicLights"    = "https://cdn.modrinth.com/data/1eAoo2A1/versions/2.0.1%2B1.16.5/lambdynamiclights-2.0.1%2B1.16.5.jar"
+
+    # 🎧 Атмосфера и Звуки
+    "Presence Footsteps"   = "https://cdn.modrinth.com/data/P1fR333n/versions/r29-1.16.5/PresenceFootsteps-r29-1.16.5.jar"
+    "Sound Physics Fabric" = "https://cdn.modrinth.com/data/qyA2pd3M/versions/v1.0.0/sound-physics-fabric-1.16.5-1.0.0.jar"
+    "Effective (Water FX)" = "https://cdn.modrinth.com/data/9s68A2aN/versions/1.1/effective-1.1.jar"
+
+    # 🏛️ Блоки для суда и декор
+    "Decorative Blocks"    = "https://cdn.modrinth.com/data/1b35Gvvy/versions/1.7.2/Decorative%20Blocks-fabric-1.16.5-1.7.2.jar"
+    "Supplementaries"      = "https://cdn.modrinth.com/data/132549/versions/1.16.5-0.18.4/supplementaries-1.16.5-0.18.4.jar"
+}
+
+Write-Host "🚀 Скачивание модов в папку Court_Modpack_1.16.5 на Рабочем столе...`n" -ForegroundColor Cyan
+
+foreach ($name in $mods.Keys) {
+    $url = $mods[$name]
+    $fileName = [System.IO.Path]::GetFileName(($url -split '\?')[0])
+    $destination = Join-Path -Path $desktopFolder -ChildPath $fileName
+
+    Write-Host "📥 Скачивание: $name..." -NoNewline
     try {
-        $apiUrl = "https://api.modrinth.com/v2/project/$slug/version"
-        $response = Invoke-RestMethod -Uri $apiUrl -Method Get -UserAgent "MinecraftModDownloader/1.0"
-        
-        # Фильтруем версии строго под Fabric и 1.20.1
-        $matchedVersion = $response | Where-Object { 
-            ($_.loaders -contains "fabric") -and ($_.game_versions -contains "1.20.1") 
-        } | Select-Object -First 1
-        
-        if ($matchedVersion) {
-            $file = $matchedVersion.files | Where-Object { $_.primary -eq $true } | Select-Object -First 1
-            if (-not $file) { $file = $matchedVersion.files[0] }
-            
-            $downloadUrl = $file.url
-            $fileName = $file.filename
-            $outputPath = Join-Path -Path $ModsFolder -ChildPath $fileName
-
-            Write-Host "Скачиваем: $fileName..." -NoNewline
-            Invoke-WebRequest -Uri $downloadUrl -OutFile $outputPath
-            Write-Host " [ГОТОВО]" -ForegroundColor Green
-        } else {
-            Write-Host "Не найден файл под Fabric 1.20.1 для $slug" -ForegroundColor Red
-        }
-    } catch {
-        Write-Host "Ошибка при скачивании $slug : $_" -ForegroundColor Red
+        Invoke-WebRequest -Uri $url -OutFile $destination -UserAgent "Mozilla/5.0"
+        Write-Host " [ОК]" -ForegroundColor Green
+    }
+    catch {
+        Write-Host " [ОШИБКА]" -ForegroundColor Red
     }
 }
 
-Write-Host "`n Все моды и библиотеки успешно скачаны в папку Mods_Paid_Anomalies!" -ForegroundColor Green
+Write-Host "`n🎉 Готово! Все `.jar` файлы находятся в папке Court_Modpack_1.16.5 на твоем Рабочем столе." -ForegroundColor Green
