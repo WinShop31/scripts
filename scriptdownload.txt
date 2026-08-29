@@ -1,49 +1,41 @@
-$desktopFolder = [System.IO.Path]::Combine([System.Environment]::GetFolderPath('Desktop'), "Court_Modpack_1.16.5")
+$ProgressPreference = 'SilentlyContinue'
+$desktop = [Environment]::GetFolderPath("Desktop")
+$targetFolder = Join-Path $desktop "Court_Modpack_1.16.5"
 
-if (-not (Test-Path -Path $desktopFolder)) {
-    New-Item -ItemType Directory -Path $desktopFolder -Force | Out-Null
-    Write-Host "📁 Создана папка на рабочем столе: $desktopFolder" -ForegroundColor Yellow
+if (-not (Test-Path $targetFolder)) {
+    New-Item -ItemType Directory -Path $targetFolder | Out-Null
+    Write-Host "📁 Создана папка: $targetFolder" -ForegroundColor Yellow
 }
 
 $mods = @{
-    # 🛠️ Сетка и строительство
     "WorldEdit"            = "https://cdn.modrinth.com/data/15vYM3xl/versions/v7.2.5/worldedit-mod-7.2.5.jar"
-
-    # 🚀 Оптимизация
     "Sodium"               = "https://cdn.modrinth.com/data/AANobbA5/versions/mc1.16.5-0.2.0%2Bbuild.4/sodium-fabric-mc1.16.5-0.2.0%2Bbuild.4.jar"
     "Lithium"              = "https://cdn.modrinth.com/data/gvQqBU17/versions/mc1.16.5-0.6.6/lithium-fabric-mc1.16.5-0.6.6.jar"
     "FerriteCore"          = "https://cdn.modrinth.com/data/u628MvyW/versions/2.0.7-fabric/ferritecore-2.0.7-fabric.jar"
     "LazyDFU"              = "https://cdn.modrinth.com/data/7rm9I131/versions/0.1.2/lazydfu-0.1.2.jar"
-
-    # 👁️ Визуал и Графика
-    "Iris (Shaders)"       = "https://cdn.modrinth.com/data/YLAmb3R7/versions/1.2.6-1.16.5/iris-mc1.16.5-1.2.6.jar"
+    "Iris"                 = "https://cdn.modrinth.com/data/YLAmb3R7/versions/1.2.6-1.16.5/iris-mc1.16.5-1.2.6.jar"
     "LambDynamicLights"    = "https://cdn.modrinth.com/data/1eAoo2A1/versions/2.0.1%2B1.16.5/lambdynamiclights-2.0.1%2B1.16.5.jar"
-
-    # 🎧 Атмосфера и Звуки
     "Presence Footsteps"   = "https://cdn.modrinth.com/data/P1fR333n/versions/r29-1.16.5/PresenceFootsteps-r29-1.16.5.jar"
     "Sound Physics Fabric" = "https://cdn.modrinth.com/data/qyA2pd3M/versions/v1.0.0/sound-physics-fabric-1.16.5-1.0.0.jar"
-    "Effective (Water FX)" = "https://cdn.modrinth.com/data/9s68A2aN/versions/1.1/effective-1.1.jar"
-
-    # 🏛️ Блоки для суда и декор
+    "Effective"            = "https://cdn.modrinth.com/data/9s68A2aN/versions/1.1/effective-1.1.jar"
     "Decorative Blocks"    = "https://cdn.modrinth.com/data/1b35Gvvy/versions/1.7.2/Decorative%20Blocks-fabric-1.16.5-1.7.2.jar"
     "Supplementaries"      = "https://cdn.modrinth.com/data/132549/versions/1.16.5-0.18.4/supplementaries-1.16.5-0.18.4.jar"
 }
 
-Write-Host "🚀 Скачивание модов в папку Court_Modpack_1.16.5 на Рабочем столе...`n" -ForegroundColor Cyan
+Write-Host "🚀 Скачивание модов в Court_Modpack_1.16.5..." -ForegroundColor Cyan
 
 foreach ($name in $mods.Keys) {
     $url = $mods[$name]
-    $fileName = [System.IO.Path]::GetFileName(($url -split '\?')[0])
-    $destination = Join-Path -Path $desktopFolder -ChildPath $fileName
-
-    Write-Host "📥 Скачивание: $name..." -NoNewline
+    $file = $url.Split('/')[-1]
+    $out = Join-Path $targetFolder $file
+    
+    Write-Host "📥 $name..." -NoNewline
     try {
-        Invoke-WebRequest -Uri $url -OutFile $destination -UserAgent "Mozilla/5.0"
-        Write-Host " [ОК]" -ForegroundColor Green
-    }
-    catch {
+        Invoke-WebRequest -Uri $url -OutFile $out -UserAgent "Mozilla/5.0"
+        Write-Host " [ГОТОВО]" -ForegroundColor Green
+    } catch {
         Write-Host " [ОШИБКА]" -ForegroundColor Red
     }
 }
 
-Write-Host "`n🎉 Готово! Все `.jar` файлы находятся в папке Court_Modpack_1.16.5 на твоем Рабочем столе." -ForegroundColor Green
+Write-Host "`n🎉 Все файлы загружены в папку Court_Modpack_1.16.5 на Рабочем столе!" -ForegroundColor Green
