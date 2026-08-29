@@ -9,35 +9,50 @@ if (-not (Test-Path $targetFolder)) {
     Write-Host "📁 Создана папка: $targetFolder" -ForegroundColor Yellow
 }
 
-$mods = @{
-    "WorldEdit"            = "https://cdn.modrinth.com/data/15vYM3xl/versions/v7.2.5/worldedit-mod-7.2.5.jar"
-    "Sodium"               = "https://cdn.modrinth.com/data/AANobbA5/versions/mc1.16.5-0.2.0%2Bbuild.4/sodium-fabric-mc1.16.5-0.2.0%2Bbuild.4.jar"
-    "Lithium"              = "https://cdn.modrinth.com/data/gvQqBU17/versions/mc1.16.5-0.6.6/lithium-fabric-mc1.16.5-0.6.6.jar"
-    "FerriteCore"          = "https://cdn.modrinth.com/data/u628MvyW/versions/2.0.7-fabric/ferritecore-2.0.7-fabric.jar"
-    "LazyDFU"              = "https://cdn.modrinth.com/data/7rm9I131/versions/0.1.2/lazydfu-0.1.2.jar"
-    "Iris"                 = "https://cdn.modrinth.com/data/YLAmb3R7/versions/1.2.6-1.16.5/iris-mc1.16.5-1.2.6.jar"
-    "LambDynamicLights"    = "https://cdn.modrinth.com/data/1eAoo2A1/versions/2.0.1%2B1.16.5/lambdynamiclights-2.0.1%2B1.16.5.jar"
-    "Presence Footsteps"   = "https://cdn.modrinth.com/data/P1fR333n/versions/r29-1.16.5/PresenceFootsteps-r29-1.16.5.jar"
-    "Sound Physics Fabric" = "https://cdn.modrinth.com/data/qyA2pd3M/versions/v1.0.0/sound-physics-fabric-1.16.5-1.0.0.jar"
-    "Effective"            = "https://cdn.modrinth.com/data/9s68A2aN/versions/1.1/effective-1.1.jar"
-    "Decorative Blocks"    = "https://cdn.modrinth.com/data/1b35Gvvy/versions/1.7.2/Decorative%20Blocks-fabric-1.16.5-1.7.2.jar"
-    "Supplementaries"      = "https://cdn.modrinth.com/data/132549/versions/1.16.5-0.18.4/supplementaries-1.16.5-0.18.4.jar"
-}
+# Список названий модов для автоматического поиска через API
+$modList = @(
+    "worldedit",
+    "sodium",
+    "lithium",
+    "ferritecore",
+    "lazydfu",
+    "iris",
+    "lambdynamiclights",
+    "presence-footsteps",
+    "sound-physics-fabric",
+    "effective",
+    "decorative-blocks",
+    "supplementaries"
+)
 
-Write-Host "🚀 Загрузка модов в папку Court_Modpack_1.16.5 на Рабочем столе..." -ForegroundColor Cyan
+Write-Host "🚀 Поиск и скачивание модов под Fabric 1.16.5...`n" -ForegroundColor Cyan
 
-foreach ($name in $mods.Keys) {
-    $rawUrl = $mods[$name]
-    $file = [System.Uri]::UnescapeDataString(($rawUrl.Split('/')[-1]))
-    $out = Join-Path $targetFolder $file
+foreach ($modSlug in $modList) {
+    Write-Host "🔍 Поиск: $modSlug..." -NoNewline
     
-    Write-Host "📥 $name..." -NoNewline
     try {
-        Invoke-WebRequest -Uri $rawUrl -OutFile $out -MaximumRedirection 5 -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-        Write-Host " [ГОТОВО]" -ForegroundColor Green
-    } catch {
+        # Запрос к Modrinth API для поиска версий под 1.16.5 и fabric
+        $apiUrl = "https://api.modrinth.com/v2/project/$modSlug/version?game_versions=[`"1.16.5`"]&loaders=[`"fabric`"]"
+        $response = Invoke-RestMethod -Uri $apiUrl -UserAgent "Mozilla/5.0"
+        
+        if ($response -and $response.Count -gt 0) {
+            # Берем первый подходящий файл из свежего релиза
+            $fileInfo = $response[0].files | Where-Object { $_.primary -eq $true } | Select-Object -First 1
+            if (-not $fileInfo) { $fileInfo = $response[0].files[0] }
+
+            $downloadUrl = $fileInfo.url
+            $fileName = $fileInfo.filename
+            $outPath = Join-Path $targetFolder $fileName
+
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $outPath -UserAgent "Mozilla/5.0"
+            Write-Host " [ГОТОВО] -> $fileName" -ForegroundColor Green
+        } else {
+            Write-Host " [НЕ НАЙДЕН ПОД 1.16.5 FABRIC]" -ForegroundColor Yellow
+        }
+    }
+    catch {
         Write-Host " [ОШИБКА: $($_.Exception.Message)]" -ForegroundColor Red
     }
 }
 
-Write-Host "`n🎉 Все файлы успешного загружены!" -ForegroundColor Green
+Write-Host "`n🎉 Скачивание завершено! Все файлы в папке Court_Modpack_1.16.5 на Рабочем столе." -ForegroundColor Green
