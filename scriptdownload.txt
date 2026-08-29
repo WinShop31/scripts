@@ -1,4 +1,6 @@
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $ProgressPreference = 'SilentlyContinue'
+
 $desktop = [Environment]::GetFolderPath("Desktop")
 $targetFolder = Join-Path $desktop "Court_Modpack_1.16.5"
 
@@ -22,20 +24,20 @@ $mods = @{
     "Supplementaries"      = "https://cdn.modrinth.com/data/132549/versions/1.16.5-0.18.4/supplementaries-1.16.5-0.18.4.jar"
 }
 
-Write-Host "🚀 Скачивание модов в Court_Modpack_1.16.5..." -ForegroundColor Cyan
+Write-Host "🚀 Загрузка модов в папку Court_Modpack_1.16.5 на Рабочем столе..." -ForegroundColor Cyan
 
 foreach ($name in $mods.Keys) {
-    $url = $mods[$name]
-    $file = $url.Split('/')[-1]
+    $rawUrl = $mods[$name]
+    $file = [System.Uri]::UnescapeDataString(($rawUrl.Split('/')[-1]))
     $out = Join-Path $targetFolder $file
     
     Write-Host "📥 $name..." -NoNewline
     try {
-        Invoke-WebRequest -Uri $url -OutFile $out -UserAgent "Mozilla/5.0"
+        Invoke-WebRequest -Uri $rawUrl -OutFile $out -MaximumRedirection 5 -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
         Write-Host " [ГОТОВО]" -ForegroundColor Green
     } catch {
-        Write-Host " [ОШИБКА]" -ForegroundColor Red
+        Write-Host " [ОШИБКА: $($_.Exception.Message)]" -ForegroundColor Red
     }
 }
 
-Write-Host "`n🎉 Все файлы загружены в папку Court_Modpack_1.16.5 на Рабочем столе!" -ForegroundColor Green
+Write-Host "`n🎉 Все файлы успешного загружены!" -ForegroundColor Green
