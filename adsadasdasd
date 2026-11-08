@@ -1,1 +1,12 @@
-docker exec fpnbot python -c "import os,urllib.request;u=os.environ.get('PANEL_URL','').rstrip('/')+'/api/bot/ping';h={'x-bot-token':os.environ.get('BOT_API_TOKEN',''),'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'};print(urllib.request.urlopen(urllib.request.Request(u,headers=h)).read())"
+docker exec -i fpnbot python - <<'EOF'
+import os, aiohttp, asyncio
+async def main():
+    u = os.environ.get('PANEL_URL','').rstrip('/') + '/api/bot/ping'
+    h = {'x-bot-token': os.environ.get('BOT_API_TOKEN',''), 'User-Agent':'Mozilla/5.0'}
+    async with aiohttp.ClientSession() as s:
+        async with s.get(u, headers=h) as r:
+            print('status:', r.status)
+            print('server:', r.headers.get('server'), '| cf-ray:', r.headers.get('cf-ray'))
+            print('body:', (await r.text())[:400])
+asyncio.run(main())
+EOF
