@@ -10,3 +10,21 @@ async def main():
             print('body:', (await r.text())[:400])
 asyncio.run(main())
 EOF
+
+
+root@vm1231551:~# docker exec -i fpnbot python - <<'EOF'
+import os, aiohttp, asyncio
+async def main():
+    u = os.environ.get('PANEL_URL','').rstrip('/') + '/api/bot/ping'
+    h = {'x-bot-token': os.environ.get('BOT_API_TOKEN',''), 'User-Agent':'Mozilla/5.0'}
+    async with aiohttp.ClientSession() as s:
+        async with s.get(u, headers=h) as r:
+            print('status:', r.status)
+            print('server:', r.headers.get('server'), '| cf-ray:', r.headers.get('cf-ray'))
+            print('body:', (await r.text())[:400])
+asyncio.run(main())
+EOF
+status: 401
+server: cloudflare | cf-ray: a577eea2cbf68e2c-FRA
+body: {"error":"unauthorized, send x-bot-token header"}
+root@vm1231551:~#
