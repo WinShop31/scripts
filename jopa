@@ -1,0 +1,42 @@
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+
+-- Таблица с идеальными значениями для максимального FPS и видимости
+local targetLighting = {
+    GlobalShadows = false,
+    ClockTime = 14,
+    FogEnd = 100000,
+    FogStart = 0,
+    Brightness = 2,
+    Ambient = Color3.fromRGB(255, 255, 255),
+    OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+}
+
+-- Функция для подавления любых визуальных эффектов
+local function nukeEffects(instance)
+    if instance:IsA("Atmosphere") then
+        instance.Density = 0
+    elseif instance:IsA("PostEffect") or instance:IsA("ColorCorrectionEffect") or instance:IsA("BloomEffect") or instance:IsA("BlurEffect") or instance:IsA("SunRaysEffect") or instance:IsA("DepthOfFieldEffect") then
+        instance.Enabled = false
+    end
+end
+
+-- 1. Очищаем всё, что уже загружено на карте
+for _, v in pairs(Lighting:GetDescendants()) do
+    nukeEffects(v)
+end
+
+-- 2. Адаптация к новым объектам: автоматически сносим любую дрянь, которую игра решит заспавнить позже
+Lighting.DescendantAdded:Connect(nukeEffects)
+
+-- 3. Защита от скриптов плейса: жестко удерживаем настройки каждый кадр
+RunService.RenderStepped:Connect(function()
+    for prop, value in pairs(targetLighting) do
+        -- Меняем значение только если игра попыталась его перезаписать (спасает от лагов)
+        if Lighting[prop] ~= value then
+            Lighting[prop] = value
+        end
+    end
+end)
+
+print("Универсальный Fullbright + FPS Boost активирован. Скрипт адаптируется сам.")
