@@ -1,64 +1,69 @@
 #SingleInstance Force
+SendMode Input
+SetBatchLines, -1
+; Принудительно заставляем Windows считать время с точностью до 1 мс
+DllCall("winmm\timeBeginPeriod", "UInt", 1)
 
 ; --- Переменные по умолчанию ---
-Delay := 30
+Delay := 25 
 CurrentKey := "v"
 
 ; --- Визуальный интерфейс (GUI) ---
 Gui, Font, s10, Segoe UI
-Gui, Add, Text, x10 y10 w280, Настройка Moonwalk (Только спам A/D)
+Gui, Add, Text, x10 y10 w280, Настройка Moonwalk (DllCall Режим)
 
-Gui, Add, Text, x10 y40, Задержка стрейфа (мс):
+Gui, Add, Text, x10 y40, Удержание A/D (мс):
 Gui, Add, Edit, x160 y38 w80 vDelayInp, %Delay%
 
-Gui, Add, Text, x10 y70, Бинд (Зажать для раскачки):
+Gui, Add, Text, x10 y70, Бинд (Зажать):
 Gui, Add, Hotkey, x160 y68 w80 vKeyInp, %CurrentKey%
 
 Gui, Add, Button, x10 y110 w230 gSaveSettings, Применить настройки
 Gui, Show, w250 h150, Moonwalk Macro
 
-; Включаем бинд по умолчанию при запуске
 Hotkey, %CurrentKey%, MacroLoop, On
 return
 
-; --- Сохранение настроек ---
 SaveSettings:
     Gui, Submit, NoHide
     Delay := DelayInp
     
-    ; Обновляем бинд, если он изменился
     if (KeyInp != "" && KeyInp != CurrentKey) {
         Hotkey, %CurrentKey%, Off, UseErrorLevel
         CurrentKey := KeyInp
         Hotkey, %CurrentKey%, MacroLoop, On, UseErrorLevel
     }
-    
-    MsgBox, 64, Успешно, Настройки применены!`nКлавиша: %CurrentKey%`nЗадержка: %Delay% мс.
 return
 
-; --- Основная логика (Только стрейфы A и D) ---
+; --- Основная логика ---
 MacroLoop:
     if (IsRunning)
         return
     IsRunning := true
     
-    ; Цикл работает, пока ты физически держишь кнопку бинда
     While GetKeyState(CurrentKey, "P") {
-        Send {a down}
-        Sleep, %Delay%
-        Send {a up}
+        ; Блокируем прерывания потока, чтобы скрипт не лагал от нагрузки на процессор
+        Critical 
         
-        Send {d down}
-        Sleep, %Delay%
-        Send {d up}
+        SendInput {a down}
+        ; Используем аппаратный таймер вместо обычного Sleep
+        DllCall("Sleep", "UInt", Delay) 
+        SendInput {a up}
+        
+        DllCall("Sleep", "UInt", 15) 
+        
+        SendInput {d down}
+        DllCall("Sleep", "UInt", Delay)
+        SendInput {d up}
+        
+        DllCall("Sleep", "UInt", 15)
     }
     
-    ; Когда отпускаешь бинд, скрипт отжимает только A и D
-    ; Твои зажатые W или S он не трогает, ты продолжишь идти!
-    Send {a up}{d up}
+    SendInput {a up}{d up}
     IsRunning := false
 return
 
-; --- Закрытие программы ---
 GuiClose:
+    ; Возвращаем таймер Windows в норму при закрытии
+    DllCall("winmm\timeEndPeriod", "UInt", 1)
     ExitApp
